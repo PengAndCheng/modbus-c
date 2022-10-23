@@ -47,12 +47,17 @@ ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, con
     if (checkCRC && modbusCRC(status->request_frame, status->request_frame_length - 2) != modbusReadLittleEndian(status->rtu_crc))
         return MODBUS_ERROR_CRC;
 
+    //提供PDU指针 返回PDU长度
+    status->responsePDU = status->response + MODBUS_RTU_PDU_OFFSET;
     err = modbusParseRequest(status, status->requestPDU, status->requestPDU_length);
     if (err) return err;
 
     //该长度为ADU长度 写地址和CRC
-    if (status->response_length)
+    if (status->responsePDU_length)
     {
+        //得到响应长度
+        status->response_length = status->responsePDU_length + MODBUS_RTU_ADU_PADDING;
+
         //广播地址 不回复
         if (*status->id.rtu_slave_address == BROADCAST_ADDRESS)
         {
@@ -111,12 +116,15 @@ ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, u
 
     uint16_t transactionID = modbusReadBigEndian(status->tcp_transactionID);
 
+    status->responsePDU = status->response + MODBUS_TCP_PDU_OFFSET;
     err = modbusParseRequest(status, status->requestPDU, status->requestPDU_length);
     if (err) return err;
 
     //该长度为ADU长度 写MBAP头
-    if (status->response_length)
+    if (status->responsePDU_length)
     {
+        status->response_length = status->responsePDU_length + MODBUS_TCP_ADU_PADDING;
+
         //检查长度
         if (status->response_length < MODBUS_TCP_ADU_MIN || status->response_length > MODBUS_TCP_ADU_MAX)
             return MODBUS_ERROR_LENGTH;

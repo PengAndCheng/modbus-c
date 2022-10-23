@@ -91,9 +91,6 @@ inline ModbusError modbusParseRequest01020304(
     uint8_t dataLength = (isCoilType ? modbusBitsToBytes(count) : (count << 1));
     //功能码+字节数+PDU长度等于数据长度
     status->responsePDU_length = 2 + dataLength;
-    status->responsePDU = status->response + MODBUS_RTU_PDU_OFFSET;
-    status->response_length = status->responsePDU_length + MODBUS_RTU_ADU_PADDING;
-
     status->responsePDU[0] = function;
     status->responsePDU[1] = dataLength;
 
@@ -161,9 +158,7 @@ inline ModbusError modbusParseRequest0506(
     slaveCallback(status, &cargs, &cres);
 
     //创建响应 0506功能码的响应帧和请求帧一样
-    status->responsePDU = status->response + MODBUS_RTU_PDU_OFFSET;
     status->requestPDU_length = 5;
-    status->response_length = status->requestPDU_length + MODBUS_RTU_ADU_PADDING;
 
     status->responsePDU[0] = function;
     modbusWriteBigEndian(&status->responsePDU[1], index);
@@ -236,7 +231,6 @@ inline ModbusError modbusParseRequest1516(
     }
 
     //构造响应
-    status->responsePDU = status->response + MODBUS_RTU_PDU_OFFSET;
     status->requestPDU_length = 5;
     status->responsePDU[0] = function;
     modbusWriteBigEndian(&status->responsePDU[1], index);
