@@ -42,6 +42,8 @@ ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, con
     status->requestPDU = request + MODBUS_RTU_PDU_OFFSET;
     status->requestPDU_length = requestLength - MODBUS_RTU_ADU_PADDING;
     status->rtu_crc = request + requestLength - 2;
+    //复位参数
+    status->response_length = 0;
 
     //检查CRC CRC小端
     if (checkCRC && modbusCRC(status->request_frame, status->request_frame_length - 2) != modbusReadLittleEndian(status->rtu_crc))
@@ -100,9 +102,10 @@ ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, u
     status->tcp_protocolID = request + MODBUS_TCP_PROTOCOLID_OFFSET;
     status->tcp_messageLengthlength = request + MODBUS_TCP_MESSAGELENGTH_OFFSET;
     status->id.tcp_unitID = request + MODBUS_TCP_UNITID_OFFSET;
-
     status->requestPDU = request + MODBUS_TCP_PDU_OFFSET;
     status->requestPDU_length = requestLength - MODBUS_TCP_ADU_PADDING;
+    //复位参数
+    status->response_length = 0;
 
     //协议标识符 00 00 表示Modbus TCP协议 MODBUS通讯大端
     uint16_t protocolID = modbusReadBigEndian(status->tcp_protocolID);
