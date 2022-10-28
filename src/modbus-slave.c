@@ -1,20 +1,25 @@
 
+
 #include "modbus-slave.h"
-#include "modbus-function.h"
+#include "modbus-slave-function.h"
 
 
 
-inline ModbusError modbusParseRequest(ModbusSlave *status, const uint8_t *requestPDU, uint8_t requestPDULength)
+static inline ModbusError modbusParseRequest(ModbusSlave *status, const uint8_t *requestPDU, uint8_t requestPDULength)
 {
     status->function = requestPDU;
 
     //直行匹配功能函数
+    ModbusError err;
     if (*status->function == 1 || *status->function == 2 || *status->function == 3 || *status->function == 4) {
-        return modbusParseRequest01020304(status, *status->function, requestPDU, requestPDULength);
+        err = modbusParseRequest01020304(status, *status->function, requestPDU, requestPDULength);
+        return err;
     }else if (*status->function == 5 || *status->function == 6) {
-        return modbusParseRequest0506(status, *status->function, requestPDU, requestPDULength);
+        err = modbusParseRequest0506(status, *status->function, requestPDU, requestPDULength);
+        return err;
     }else if (*status->function == 15 || *status->function == 16) {
-        return modbusParseRequest1516(status, *status->function, requestPDU, requestPDULength);
+        err = modbusParseRequest1516(status, *status->function, requestPDU, requestPDULength);
+        return err;
     }
 
     //没有匹配功能函数
@@ -25,6 +30,7 @@ inline ModbusError modbusParseRequest(ModbusSlave *status, const uint8_t *reques
 
 
 ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, const uint8_t *request, uint16_t requestLength, uint8_t checkCRC){
+    status->line_type = RTU;
     ModbusError err;
 
     //检查从机地址
@@ -89,6 +95,7 @@ ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, con
 
 ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, uint16_t requestLength)
 {
+    status->line_type = TCP;
     ModbusError err;
 
     //检查长度
@@ -140,4 +147,11 @@ ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, u
     }else {
         return MODBUS_ERROR_LENGTH;
     }
+}
+
+
+void modbusSlaveInit(ModbusSlave *status,uint8_t* response_buf, uint16_t response_buf_size,ModbusSlaveRegisterCallback callback){
+    status->response = response_buf;
+    status->response_buf_size = response_buf_size;
+    status->slaveRegisterCallback = callback;
 }

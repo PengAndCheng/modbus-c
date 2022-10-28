@@ -2,17 +2,15 @@
 #ifndef MODBUS_SLAVE_CALLBACK_H
 #define MODBUS_SLAVE_CALLBACK_H
 
+//#define PRINTF printf
+#define PRINTF
 
-#include "modbus-slave.h"
-#include "stdio.h"
-
-
-inline ModbusError slaveCallback(
+static inline ModbusError defaultSlaveRegisterCallback(
     const ModbusSlave *slave,
     const ModbusRegisterCallbackArgs *args,
     ModbusRegisterCallbackResult *result)
 {
-    printf(
+    PRINTF(
         "Register query:\n"
         "\tquery: %d\n"
         "\t type: %d\n"
@@ -43,5 +41,7 @@ inline ModbusError slaveCallback(
 
     return MODBUS_OK;
 }
+
+
 
 #endif /* MODBUS_SLAVE_CALLBACK_H */

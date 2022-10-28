@@ -4,6 +4,8 @@
 
 #include "modbus-base.h"
 
+
+
 typedef struct ModbusSlave ModbusSlave;
 
 
@@ -32,6 +34,12 @@ typedef struct ModbusRegisterCallbackResult
 } ModbusRegisterCallbackResult;
 
 
+typedef ModbusError (*ModbusSlaveRegisterCallback)(
+    const ModbusSlave *status,
+    const ModbusRegisterCallbackArgs *args,
+    ModbusRegisterCallbackResult *out);
+
+
 union ID
 {
     const uint8_t* tcp_unitID;
@@ -40,6 +48,8 @@ union ID
 
 struct ModbusSlave
 {
+    ModbusLineType line_type;
+
     const uint8_t* request_frame;
     uint16_t request_frame_length;//tcp ADU > 255
 
@@ -64,12 +74,15 @@ struct ModbusSlave
 
     uint8_t* responsePDU;
     uint16_t responsePDU_length;
-};
 
+    ModbusSlaveRegisterCallback slaveRegisterCallback;
+};
 
 
 ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, const uint8_t *request, uint16_t requestLength, uint8_t checkCRC);
 
 ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, uint16_t requestLength);
+
+void modbusSlaveInit(ModbusSlave *status,uint8_t* response_buf, uint16_t response_buf_size,ModbusSlaveRegisterCallback callback);
 
 #endif /* MODBUS_SLAVE_H */

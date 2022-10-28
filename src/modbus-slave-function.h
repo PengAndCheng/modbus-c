@@ -1,16 +1,15 @@
 
-#ifndef MODBUS_FUNCTION_H
-#define MODBUS_FUNCTION_H
+#ifndef MODBUS_SLAVE_FUNCTION_H
+#define MODBUS_SLAVE_FUNCTION_H
 
-#include "modbus-slave.h"
 #include "modbus-slave-callback.h"
 
-
-#define MODBUS_SLAVE_CHECK_CALLBACK     0
-
+#define MODBUS_SLAVE_CHECK_CALLBACK     1
 
 
-inline ModbusError modbusParseRequest01020304(
+
+
+static inline ModbusError modbusParseRequest01020304(
     ModbusSlave *status,
     uint8_t function,
     const uint8_t *requestPDU,
@@ -81,7 +80,11 @@ inline ModbusError modbusParseRequest01020304(
     {
         cargs.index = index + i;
         ModbusError fail;
-        fail = slaveCallback(status, &cargs, &cres);
+        if (status->slaveRegisterCallback) {
+            fail = status->slaveRegisterCallback(status, &cargs, &cres);
+        }else {
+            fail = defaultSlaveRegisterCallback(status, &cargs, &cres);
+        }
         if (fail) return fail;
         if (cres.exceptionCode) return cres.exceptionCode;
     }
@@ -102,7 +105,11 @@ inline ModbusError modbusParseRequest01020304(
     for (uint16_t i = 0; i < count; i++)
     {
         cargs.index = index + i;
-        slaveCallback(status, &cargs, &cres);
+        if (status->slaveRegisterCallback) {
+            status->slaveRegisterCallback(status, &cargs, &cres);
+        }else {
+            defaultSlaveRegisterCallback(status, &cargs, &cres);
+        }
 
         if (isCoilType)
             modbusWriteBits(&status->responsePDU[2], i, cres.value != 0);
@@ -118,7 +125,7 @@ inline ModbusError modbusParseRequest01020304(
 
 
 
-inline ModbusError modbusParseRequest0506(
+static inline ModbusError modbusParseRequest0506(
     ModbusSlave *status,
     uint8_t function,
     const uint8_t *requestPDU,
@@ -148,14 +155,23 @@ inline ModbusError modbusParseRequest0506(
 
     //检查回调
 #if MODBUS_SLAVE_CHECK_CALLBACK
-    ModbusError fail = slaveCallback(status, &cargs, &cres);
+    ModbusError fail;
+    if (status->slaveRegisterCallback) {
+        fail = status->slaveRegisterCallback(status, &cargs, &cres);
+    }else {
+        fail = defaultSlaveRegisterCallback(status, &cargs, &cres);
+    }
     if (fail) return fail;
     if (cres.exceptionCode) return cres.exceptionCode;
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
 
     //写数据
     cargs.query = MODBUS_REGQ_W;
-    slaveCallback(status, &cargs, &cres);
+    if (status->slaveRegisterCallback) {
+        status->slaveRegisterCallback(status, &cargs, &cres);
+    }else {
+        defaultSlaveRegisterCallback(status, &cargs, &cres);
+    }
 
     //创建响应 0506功能码的响应帧和请求帧一样
     status->requestPDU_length = 5;
@@ -169,7 +185,7 @@ inline ModbusError modbusParseRequest0506(
 
 
 
-inline ModbusError modbusParseRequest1516(
+static inline ModbusError modbusParseRequest1516(
     ModbusSlave *status,
     uint8_t function,
     const uint8_t *requestPDU,
@@ -215,7 +231,12 @@ inline ModbusError modbusParseRequest1516(
     {
         cargs.index = index + i;
         cargs.value = datatype == MODBUS_COIL ? modbusReadBits(&requestPDU[6], i) : modbusReadLittleEndian(&requestPDU[6 + (i << 1)]);
-        ModbusError fail = slaveCallback(status, &cargs, &cres);
+        ModbusError fail;
+        if (status->slaveRegisterCallback) {
+            fail = status->slaveRegisterCallback(status, &cargs, &cres);
+        }else {
+            fail = defaultSlaveRegisterCallback(status, &cargs, &cres);
+        }
         if (fail) return fail;
         if (cres.exceptionCode) return cres.exceptionCode;
     }
@@ -227,7 +248,11 @@ inline ModbusError modbusParseRequest1516(
     {
         cargs.index = index + i;
         cargs.value = datatype == MODBUS_COIL ? modbusReadBits(&requestPDU[6], i) : modbusReadLittleEndian(&requestPDU[6 + (i << 1)]);
-        slaveCallback(status, &cargs, &cres);
+        if (status->slaveRegisterCallback) {
+            status->slaveRegisterCallback(status, &cargs, &cres);
+        }else {
+            defaultSlaveRegisterCallback(status, &cargs, &cres);
+        }
     }
 
     //构造响应
@@ -241,4 +266,7 @@ inline ModbusError modbusParseRequest1516(
 
 
 
-#endif /* MODBUS_FUNCTION_H */
+
+
+
+#endif /* MODBUS_SLAVE_FUNCTION_H */

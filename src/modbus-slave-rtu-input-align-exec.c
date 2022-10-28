@@ -1,7 +1,6 @@
 
-#include "modbus-slave.h"
-#include "modbus-slave-rtu-request-frame-align.h"
-#include "stdio.h"
+#include <modbus-slave-rtu-input-align-exec.h>
+
 
 typedef enum {
     slave_rtu_request_frame_length_align=1,                        //帧长度刚好合适
@@ -32,9 +31,9 @@ static uint8_t slave_rtu_request_frame_align_function_code[] = {1,2,3,4,5,6,15,1
 #define REGISTER_ADDRESS_NB_OFFSET  4
 
 
-int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_request_frame_buf* msrrfb, uint8_t slave_address,modbus_slave_rtu_response_output output){
+int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, ModbusSlave *status, uint8_t slave_address){
     //变量尽量定义的goto标签前
-    if (msrrfb->recv_head != 0) {
+    if (queue->recv_head != 0) {
         return slave_rtu_request_frame_align_error_recv_old;
     }
 
@@ -42,23 +41,25 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
     uint16_t recvLen;
     uint8_t* request;
     uint16_t requestLen;
-    slave_rtu_request_frame_align_error_e flag;
+    slave_rtu_request_frame_align_error_e flag = 0;
 
     __begin:
     count++;
-    if (count > msrrfb->buf_size) {
+    if (count > queue->buf_size) {
         return slave_rtu_request_frame_align_error_count;
     }
-    recvLen = msrrfb->recv_end - msrrfb->recv_head;
-    request = &msrrfb->buf[msrrfb->recv_head];
+    recvLen = queue->recv_end - queue->recv_head;
+    request = &queue->buf[queue->recv_head];
     requestLen = 0;
 
 #if modbus_slave_rtu_request_frame_align_debug
-    printf("modbus_slave_rtu_request_frame_align: count=%d, flag=%d, recvLen=%d.\r\nrecv:",count,flag,recvLen);
-    for (int i = 0; i < recvLen; ++i) {
-        printf(" %02X",request[i]);
+    if (count > 2) {
+        printf("modbus_slave_rtu_request_frame_align: count=%d, flag=%d, recvLen=%d.\r\nrecv:",count,flag,recvLen);
+        for (int i = 0; i < recvLen; ++i) {
+            printf(" %02X",request[i]);
+        }
+        printf(" .\r\n");
     }
-    printf(" .\r\n");
 #endif
 
     //1 判断从机地址及其长度
@@ -71,7 +72,7 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
         //合法
     }else {
         flag = slave_rtu_request_frame_align_error_slave_address;
-        msrrfb->recv_head = msrrfb->recv_head + SLAVE_ADDRESS_OFFSET + 1;
+        queue->recv_head = queue->recv_head + SLAVE_ADDRESS_OFFSET + 1;
         goto __begin;
     }
 
@@ -93,7 +94,7 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
     if (FC_ok != 1)
     {
         flag = slave_rtu_request_frame_align_error_function_code;
-        msrrfb->recv_head = msrrfb->recv_head + FUNCTION_CODE_OFFSET + 1;
+        queue->recv_head = queue->recv_head + FUNCTION_CODE_OFFSET + 1;
         goto __begin;
     }
 
@@ -123,13 +124,13 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
             //CRC校验
             uint8_t* crc;
             crc = &request[FC010203040506_FRAME_SIZE - 2];
-            if (modbusCRC(request, FC010203040506_FRAME_SIZE) == modbusReadLittleEndian(crc)) {
+            if (modbusCRC(request, FC010203040506_FRAME_SIZE-2) == modbusReadLittleEndian(crc)) {
                 requestLen = FC010203040506_FRAME_SIZE;
                 flag = slave_rtu_request_frame_length_align;
                 goto __align;
             }else {
                 flag = slave_rtu_request_frame_align_error_crc;
-                msrrfb->recv_head = msrrfb->recv_head + FC010203040506_FRAME_SIZE;
+                queue->recv_head = queue->recv_head + FC010203040506_FRAME_SIZE;
                 goto __begin;
             }
         }
@@ -146,13 +147,13 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
             //CRC校验
             uint8_t* crc;
             crc = &request[FC15_FLEN - 2];
-            if (modbusCRC(request, FC15_FLEN) == modbusReadLittleEndian(crc)) {
+            if (modbusCRC(request, FC15_FLEN-2) == modbusReadLittleEndian(crc)) {
                 requestLen = FC15_FLEN;
                 flag = slave_rtu_request_frame_length_align;
                 goto __align;
             }else {
                 flag = slave_rtu_request_frame_align_error_crc;
-                msrrfb->recv_head = msrrfb->recv_head + FC15_FLEN;
+                queue->recv_head = queue->recv_head + FC15_FLEN;
                 goto __begin;
             }
         }
@@ -169,13 +170,13 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
             //CRC校验
             uint8_t* crc;
             crc = &request[FC16_FLEN - 2];
-            if (modbusCRC(request, FC16_FLEN) == modbusReadLittleEndian(crc)) {
+            if (modbusCRC(request, FC16_FLEN-2) == modbusReadLittleEndian(crc)) {
                 requestLen = FC16_FLEN;
                 flag = slave_rtu_request_frame_length_align;
                 goto __align;
             }else {
                 flag = slave_rtu_request_frame_align_error_crc;
-                msrrfb->recv_head = msrrfb->recv_head + FC16_FLEN;
+                queue->recv_head = queue->recv_head + FC16_FLEN;
                 goto __begin;
             }
         }
@@ -186,10 +187,7 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
 
     __align:
     modbusParseRequestRTU(status, slave_address, request, requestLen, 0);
-    if (status->response_length && output) {
-        output(status->response,status->response_length);
-    }
-    msrrfb->recv_head = msrrfb->recv_head + requestLen;
+    queue->recv_head = queue->recv_head + requestLen;
     return flag;
 }
 
@@ -199,36 +197,45 @@ int modbus_slave_rtu_request_frame_align(ModbusSlave *status,modbus_slave_rtu_re
 
 
 
-void modbus_slave_rtu_request_frame_buf_init(modbus_slave_rtu_request_frame_buf* msrrfb, uint8_t* buf, uint16_t buf_size){
-    msrrfb->buf = buf;
-    msrrfb->buf_size = buf_size;
-    msrrfb->recv_head = 0;
-    msrrfb->recv_end = 0;
+void modbus_slave_rtu_input_queue_init(modbus_slave_rtu_input_queue* queue, uint8_t* buf, uint16_t buf_size){
+    queue->buf = buf;
+    queue->buf_size = buf_size;
+    queue->recv_head = 0;
+    queue->recv_end = 0;
 }
 
-void modbus_slave_rtu_request_input(modbus_slave_rtu_request_frame_buf* msrrfb, uint8_t* data, uint16_t len){
+void modbus_slave_rtu_input(modbus_slave_rtu_input_queue* queue, uint8_t* data, uint16_t len){
     //buf前空白 数组执行左移
-    if (msrrfb->recv_head > msrrfb->buf_size) {
+    if (queue->recv_head > queue->buf_size) {
         //数据异常 将其归为
-        msrrfb->recv_head = 0;
+        queue->recv_head = 0;
     }
-    if (msrrfb->recv_head != 0) {
-        int nb = msrrfb->recv_end - msrrfb->recv_head;
+    if (queue->recv_head != 0) {
+        int nb = queue->recv_end - queue->recv_head;
         for (int i = 0; i < nb; ++i) {
-            msrrfb->buf[i] = msrrfb->buf[msrrfb->recv_head+i];
+            queue->buf[i] = queue->buf[queue->recv_head+i];
         }
-        msrrfb->recv_end = msrrfb->recv_end - msrrfb->recv_head;
-        msrrfb->recv_head = 0;
+        queue->recv_end = queue->recv_end - queue->recv_head;
+        queue->recv_head = 0;
     }
 
     //将数据压入缓存区 该函数可以用在中断当中
     for (int i = 0; i < len; ++i) {
-        if (msrrfb->recv_end < msrrfb->buf_size) {
-            msrrfb->buf[msrrfb->recv_end] = data[i];
-            msrrfb->recv_end = msrrfb->recv_end + 1;
+        if (queue->recv_end < queue->buf_size) {
+            queue->buf[queue->recv_end] = data[i];
+            queue->recv_end = queue->recv_end + 1;
         }else {
             //数据满 或者recv_end异常将其归为
-            msrrfb->recv_end = msrrfb->buf_size;
+            queue->recv_end = queue->buf_size;
         }
     }
+}
+
+int modbus_slave_rtu_output(ModbusSlave *status, output fn){
+    if (fn && status->response_length) {
+        int ret = fn(status->response,status->response_length);
+        status->response_length = 0;
+        return ret;
+    }
+    return 0;
 }

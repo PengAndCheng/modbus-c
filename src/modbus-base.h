@@ -4,6 +4,8 @@
 
 
 #include <stdint.h>
+#include <stdio.h>
+
 
 
 
@@ -43,7 +45,11 @@ typedef enum ModbusDataType
     MODBUS_DISCRETE_INPUT = 8    //离散线圈
 } ModbusDataType;
 
-
+typedef enum ModbusLineType
+{
+    RTU,
+    TCP,
+} ModbusLineType;
 
 
 typedef enum ModbusError
@@ -89,7 +95,7 @@ typedef enum ModbusError
  * @param n 数组中的第几个位 modbus中数组为LSB(最低有效字节)开始，位lsb(最低有效位)开始
  * @return 0 or 1
  */
-inline uint8_t modbusReadBits(const uint8_t *dest, uint16_t n)
+static inline uint8_t modbusReadBits(const uint8_t *dest, uint16_t n)
 {
     return (dest[n >> 3] & (1 << (n & 7))) != 0;
 }
@@ -100,7 +106,7 @@ inline uint8_t modbusReadBits(const uint8_t *dest, uint16_t n)
  * @param n
  * @param value
  */
-inline void modbusWriteBits(uint8_t *dest, uint16_t n, uint8_t value)
+static inline void modbusWriteBits(uint8_t *dest, uint16_t n, uint8_t value)
 {
     if (value)
         dest[n >> 3] |= (1 << (n & 7));
@@ -113,14 +119,14 @@ inline void modbusWriteBits(uint8_t *dest, uint16_t n, uint8_t value)
  * @param n 为多少个位
  * @return 返回装载n个位需要多少个字节，就是除以8的近1法
  */
-inline uint16_t modbusBitsToBytes(uint16_t n)
+static inline uint16_t modbusBitsToBytes(uint16_t n)
 {
     return (n + 7) >> 3;
 }
 
 
 
-inline uint16_t modbusReadLittleEndian(const uint8_t *p)
+static inline uint16_t modbusReadLittleEndian(const uint8_t *p)
 {
     uint8_t lo = *p;
     uint8_t hi = *(p + 1);
@@ -128,7 +134,7 @@ inline uint16_t modbusReadLittleEndian(const uint8_t *p)
 }
 
 
-inline uint16_t modbusWriteLittleEndian(uint8_t *p, uint16_t val)
+static inline uint16_t modbusWriteLittleEndian(uint8_t *p, uint16_t val)
 {
     *p = val & 0xff;
     *(p + 1) = val >> 8;
@@ -158,6 +164,9 @@ inline uint16_t modbusWriteBigEndian(uint8_t *p, uint16_t val)
  */
 inline uint8_t modbusCheckRangeU16(uint16_t index, uint16_t count)
 {
+#ifndef UINT16_MAX
+#define UINT16_MAX 0xFFFF
+#endif
     return index > UINT16_MAX - count + 1;
 }
 
