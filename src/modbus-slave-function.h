@@ -16,8 +16,10 @@ static inline ModbusError modbusParseRequest01020304(
     uint8_t requestPDULength)
 {
     //功能内检查参数值 5就是PDU请求长度
-    if (requestPDULength != 5)
+    if (requestPDULength != 5){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_LENGTH;
+    }
 
     ModbusDataType datatype;
     uint16_t maxCount;
@@ -49,6 +51,7 @@ static inline ModbusError modbusParseRequest01020304(
             break;
 
         default:
+            SLAVE_DEBUG_PRINTF;
             return MODBUS_ERROR_FUNCTION;
             break;
     }
@@ -57,12 +60,16 @@ static inline ModbusError modbusParseRequest01020304(
     uint16_t count = modbusReadBigEndian(&requestPDU[3]);
 
     //检查寄存器数量 好像0也是合法要返回的 需要校验
-    if (count == 0 || count > maxCount)
+    if (count == 0 || count > maxCount){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_COUNT;
+    }
 
     //寄存器地址超过65535
-    if (modbusCheckRangeU16(index, count))
+    if (modbusCheckRangeU16(index, count)){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_RANGE;
+    }
 
     //准备回调参数
     ModbusRegisterCallbackResult cres;
@@ -85,8 +92,14 @@ static inline ModbusError modbusParseRequest01020304(
         }else {
             fail = defaultSlaveRegisterCallback(status, &cargs, &cres);
         }
-        if (fail) return fail;
-        if (cres.exceptionCode) return cres.exceptionCode;
+        if (fail) {
+            SLAVE_DEBUG_PRINTF;
+            return fail;
+        }
+        if (cres.exceptionCode) {
+            SLAVE_DEBUG_PRINTF;
+            return cres.exceptionCode;
+        }
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
 
@@ -132,16 +145,20 @@ static inline ModbusError modbusParseRequest0506(
     uint8_t requestPDULength)
 {
     //检查PDU长度
-    if (requestPDULength != 5)
+    if (requestPDULength != 5){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_LENGTH;
+    }
 
     ModbusDataType datatype = function == 5 ? MODBUS_COIL : MODBUS_HOLDING_REGISTER;
     uint16_t index = modbusReadBigEndian(&requestPDU[1]);
     uint16_t value = modbusReadBigEndian(&requestPDU[3]);
 
     //线圈的1值是0xFF00. 65280
-    if (datatype == MODBUS_COIL && value != 0x0000 && value != 0xFF00)
+    if (datatype == MODBUS_COIL && value != 0x0000 && value != 0xFF00){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_VALUE;
+    }
 
     //准备毁掉参数
     ModbusRegisterCallbackResult cres;
@@ -161,8 +178,14 @@ static inline ModbusError modbusParseRequest0506(
     }else {
         fail = defaultSlaveRegisterCallback(status, &cargs, &cres);
     }
-    if (fail) return fail;
-    if (cres.exceptionCode) return cres.exceptionCode;
+    if (fail) {
+        SLAVE_DEBUG_PRINTF;
+        return fail;
+    }
+    if (cres.exceptionCode) {
+        SLAVE_DEBUG_PRINTF;
+        return cres.exceptionCode;
+    }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
 
     //写数据
@@ -174,7 +197,7 @@ static inline ModbusError modbusParseRequest0506(
     }
 
     //创建响应 0506功能码的响应帧和请求帧一样
-    status->requestPDU_length = 5;
+    status->responsePDU_length = 5;
 
     status->responsePDU[0] = function;
     modbusWriteBigEndian(&status->responsePDU[1], index);
@@ -192,7 +215,10 @@ static inline ModbusError modbusParseRequest1516(
     uint8_t requestPDULength)
 {
     //检查长度 1516功能码的长度是动态的
-    if (requestPDULength < 6) return MODBUS_ERROR_LENGTH;
+    if (requestPDULength < 6) {
+        SLAVE_DEBUG_PRINTF;
+        return MODBUS_ERROR_LENGTH;
+    }
 
     //获取寄存器地址和寄存器个数
     ModbusDataType datatype = function == 15 ? MODBUS_COIL : MODBUS_HOLDING_REGISTER;
@@ -202,18 +228,24 @@ static inline ModbusError modbusParseRequest1516(
     uint8_t declaredLength = requestPDU[5];
 
     //检查声明的长度是否正确
-    if (declaredLength == 0 || declaredLength != requestPDULength - 6)
+    if (declaredLength == 0 || declaredLength != requestPDULength - 6){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_LENGTH;
+    }
 
     //检查数量
     if (count == 0
         || count > maxCount
-        || declaredLength != (datatype == MODBUS_COIL ? modbusBitsToBytes(count) : (count << 1)))
+        || declaredLength != (datatype == MODBUS_COIL ? modbusBitsToBytes(count) : (count << 1))){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_COUNT;
+    }
 
     //地址范围检查
-    if (modbusCheckRangeU16(index, count))
+    if (modbusCheckRangeU16(index, count)){
+        SLAVE_DEBUG_PRINTF;
         return MODBUS_ERROR_RANGE;
+    }
 
     // Prepare callback args
     ModbusRegisterCallbackResult cres;
@@ -237,8 +269,14 @@ static inline ModbusError modbusParseRequest1516(
         }else {
             fail = defaultSlaveRegisterCallback(status, &cargs, &cres);
         }
-        if (fail) return fail;
-        if (cres.exceptionCode) return cres.exceptionCode;
+        if (fail) {
+            SLAVE_DEBUG_PRINTF;
+            return fail;
+        }
+        if (cres.exceptionCode) {
+            SLAVE_DEBUG_PRINTF;
+            return cres.exceptionCode;
+        }
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
 
@@ -256,7 +294,7 @@ static inline ModbusError modbusParseRequest1516(
     }
 
     //构造响应
-    status->requestPDU_length = 5;
+    status->responsePDU_length = 5;
     status->responsePDU[0] = function;
     modbusWriteBigEndian(&status->responsePDU[1], index);
     modbusWriteBigEndian(&status->responsePDU[3], count);

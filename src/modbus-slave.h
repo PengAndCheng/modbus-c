@@ -5,6 +5,13 @@
 #include "modbus-base.h"
 
 
+#define SLAVE_DEBUG 1
+#if SLAVE_DEBUG
+#define SLAVE_DEBUG_PRINTF  printf("modbus slave error, %s, %d.\r\n",__FILE__ , __LINE__);
+#else
+#define SLAVE_DEBUG_PRINTF
+#endif
+
 
 typedef struct ModbusSlave ModbusSlave;
 

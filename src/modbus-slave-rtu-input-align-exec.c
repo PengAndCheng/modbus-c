@@ -42,6 +42,7 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
     uint8_t* request;
     uint16_t requestLen;
     slave_rtu_request_frame_align_error_e flag = 0;
+    int temp;
 
     __begin:
     count++;
@@ -52,21 +53,20 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
     request = &queue->buf[queue->recv_head];
     requestLen = 0;
 
+    //1 判断从机地址及其长度
+    if (recvLen < SLAVE_ADDRESS_OFFSET + 1)
+    {
+        return slave_rtu_request_frame_align_error_length_short;
+    }
 #if modbus_slave_rtu_request_frame_align_debug
-    if (count > 2) {
+    if (count > 0) {
         printf("modbus_slave_rtu_request_frame_align: count=%d, flag=%d, recvLen=%d.\r\nrecv:",count,flag,recvLen);
         for (int i = 0; i < recvLen; ++i) {
             printf(" %02X",request[i]);
         }
         printf(" .\r\n");
     }
-#endif
-
-    //1 判断从机地址及其长度
-    if (recvLen < SLAVE_ADDRESS_OFFSET + 1)
-    {
-        return slave_rtu_request_frame_align_error_length_short;
-    }
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
     if (request[SLAVE_ADDRESS_OFFSET] == slave_address || request[SLAVE_ADDRESS_OFFSET] == BROADCAST_ADDRESS)
     {
         //合法
@@ -79,6 +79,9 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
     //2 判断功能码及其长度
     if (recvLen < FUNCTION_CODE_OFFSET + 1)
     {
+#if modbus_slave_rtu_request_frame_align_debug
+        printf("recvLen < FUNCTION_CODE_OFFSET + 1.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
         return slave_rtu_request_frame_align_error_length_short;
     }
     uint8_t FC = request[FUNCTION_CODE_OFFSET];
@@ -110,6 +113,9 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
     //判断寄存器个数及长度
     if (recvLen < 6)
     {
+#if modbus_slave_rtu_request_frame_align_debug
+        printf("recvLen < 6.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
         return slave_rtu_request_frame_align_error_length_short;
     }
     uint16_t RANB=request[REGISTER_ADDRESS_NB_OFFSET]<<8 | request[REGISTER_ADDRESS_NB_OFFSET+1];
@@ -119,6 +125,9 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
     {
         if (recvLen < FC010203040506_FRAME_SIZE)
         {
+#if modbus_slave_rtu_request_frame_align_debug
+            printf("recvLen < FC010203040506_FRAME_SIZE.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
             return slave_rtu_request_frame_align_error_length_short;
         }else {
             //CRC校验
@@ -141,6 +150,9 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
 
         if (recvLen < FC15_FLEN)
         {
+#if modbus_slave_rtu_request_frame_align_debug
+            printf("recvLen < FC15_FLEN.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
             return slave_rtu_request_frame_align_error_length_short;
         }else
         {
@@ -164,6 +176,9 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
 
         if (recvLen < FC16_FLEN)
         {
+#if modbus_slave_rtu_request_frame_align_debug
+            printf("recvLen < FC16_FLEN.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
             return slave_rtu_request_frame_align_error_length_short;
         }else
         {
@@ -180,13 +195,26 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
                 goto __begin;
             }
         }
+    }else {
+#if modbus_slave_rtu_request_frame_align_debug
+        printf("FC error.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
     }
 
     //这里可以添加CRC校验功能 不添加直接返回帧整齐
+#if modbus_slave_rtu_request_frame_align_debug
+    printf("slave_rtu_request_frame_align_error_end.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
     return slave_rtu_request_frame_align_error_end;
 
     __align:
-    modbusParseRequestRTU(status, slave_address, request, requestLen, 0);
+    temp = modbusParseRequestRTU(status, slave_address, request, requestLen, 0);
+    if (temp) {
+#if modbus_slave_rtu_request_frame_align_debug
+        printf("modbusParseRequestRTU = %d, requestLen=%d.\r\n",temp,requestLen);
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
+    }
+    (void)temp;
     queue->recv_head = queue->recv_head + requestLen;
     return flag;
 }
