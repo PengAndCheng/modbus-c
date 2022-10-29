@@ -47,6 +47,9 @@ int modbus_slave_rtu_input_align_exec(modbus_slave_rtu_input_queue* queue, Modbu
     __begin:
     count++;
     if (count > queue->buf_size) {
+#if modbus_slave_rtu_request_frame_align_debug
+        printf("slave_rtu_request_frame_align_error_count.\r\n");
+#endif /* #if modbus_slave_rtu_request_frame_align_debug */
         return slave_rtu_request_frame_align_error_count;
     }
     recvLen = queue->recv_end - queue->recv_head;
