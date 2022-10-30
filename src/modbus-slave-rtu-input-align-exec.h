@@ -4,7 +4,7 @@
 
 #include "modbus-slave.h"
 
-#define modbus_slave_rtu_request_frame_align_debug      0
+#define modbus_slave_rtu_request_frame_align_debug      1
 
 typedef int (*output)(uint8_t* data, int lenght);
 

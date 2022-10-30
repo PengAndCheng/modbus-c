@@ -1,0 +1,10 @@
+
+#ifndef MODBUS_MASTER_RTU_INPUT_ALIGN_EXEC_H
+#define MODBUS_MASTER_RTU_INPUT_ALIGN_EXEC_H
+
+
+#include "modbus-master.h"
+
+
+
+#endif /* MODBUS_MASTER_RTU_INPUT_ALIGN_EXEC_H */

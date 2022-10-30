@@ -2,8 +2,13 @@
 #ifndef MODBUS_SLAVE_CALLBACK_H
 #define MODBUS_SLAVE_CALLBACK_H
 
-//#define PRINTF printf
-#define PRINTF
+#define PRINTF printf
+//#define PRINTF
+
+uint8_t R01[32]={0};
+uint8_t R02[32]={0};
+uint16_t R03[32]={0};
+uint16_t R04[32]={0};
 
 static inline ModbusError defaultSlaveRegisterCallback(
     const ModbusSlave *slave,
@@ -11,12 +16,7 @@ static inline ModbusError defaultSlaveRegisterCallback(
     ModbusRegisterCallbackResult *result)
 {
     PRINTF(
-        "Register query:\n"
-        "\tquery: %d\n"
-        "\t type: %d\n"
-        "\t   id: %d\n"
-        "\tvalue: %d\n"
-        "\t  fun: %d\n",
+        "Register query:\n query: %d\n type: %d\n id: %d\n value: %d\n fun: %d\n\n",
         args->query,
         args->type,
         args->index,
@@ -33,11 +33,60 @@ static inline ModbusError defaultSlaveRegisterCallback(
 
 
         case MODBUS_REGQ_R:
+        case MODBUS_REGQ_W:
             result->value = 0;
             break;
 
         default: break;
     }
+
+    if (args->function == 01 || args->function == 05 || args->function == 15) {
+        switch (args->query) {
+            case MODBUS_REGQ_R:
+                result->value = R01[args->index];
+                break;
+            case MODBUS_REGQ_W:
+                R01[args->index] = args->value;
+                break;
+
+            default: break;
+        }
+    }else if (args->function == 02) {
+        switch (args->query) {
+            case MODBUS_REGQ_R:
+                result->value = R01[args->index];
+                break;
+            case MODBUS_REGQ_W:
+                R01[args->index] = args->value;
+                break;
+
+            default: break;
+        }
+    }else if (args->function == 03 || args->function == 06 || args->function == 16) {
+        switch (args->query) {
+            case MODBUS_REGQ_R:
+                result->value = R03[args->index];
+                break;
+            case MODBUS_REGQ_W:
+                R03[args->index] = args->value;
+                break;
+
+            default: break;
+        }
+    }else if (args->function == 04) {
+        switch (args->query) {
+            case MODBUS_REGQ_R:
+                result->value = R03[args->index];
+                break;
+            case MODBUS_REGQ_W:
+                R03[args->index] = args->value;
+                break;
+
+            default: break;
+        }
+    }
+
+
 
     return MODBUS_OK;
 }

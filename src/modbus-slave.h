@@ -15,7 +15,21 @@
 
 typedef struct ModbusSlave ModbusSlave;
 
+typedef enum ModbusSlaveRequestResult
+{
+    REQUEST_PASS,
+} ModbusSlaveRequestResult;
 
+typedef enum ModbusSlaveRequestResultCallbackResult
+{
+    CALLBACK_RESULT_EXEC_REGISTER_CALLBACK,
+    CALLBACK_RESULT_SKIP_REGISTER_CALLBACK,
+} ModbusSlaveRequestResultCallbackResult;
+
+typedef ModbusSlaveRequestResultCallbackResult (*ModbusSlaveRequestResultCallback)(
+    const ModbusSlave *status,
+    ModbusSlaveRequestResult result,
+    void* vp);
 
 typedef enum ModbusRegisterQuery
 {
@@ -83,6 +97,7 @@ struct ModbusSlave
     uint16_t responsePDU_length;
 
     ModbusSlaveRegisterCallback slaveRegisterCallback;
+    ModbusSlaveRequestResultCallback resultCallback;
 };
 
 

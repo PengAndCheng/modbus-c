@@ -80,6 +80,13 @@ typedef enum ModbusError
     MODBUS_ERROR_ADDRESS,
 
     MODBUS_ERROR_OTHER,
+
+
+
+
+
+    MODBUS_FUNCTION_EXCEPTIONAL_BASE = 100,
+    MODBUS_CALLBACK_EXCEPTIONAL_BASE = 200,//回调返回+100 功能返回又+100 整体就是200 但是这个异常不使用 内部使用MODBUS_FUNCTION_EXCEPTIONAL_BASE
 } ModbusError;
 
 
@@ -142,14 +149,14 @@ static inline uint16_t modbusWriteLittleEndian(uint8_t *p, uint16_t val)
 }
 
 
-inline uint16_t modbusReadBigEndian(const uint8_t *p)
+static inline uint16_t modbusReadBigEndian(const uint8_t *p)
 {
     uint8_t lo = *(p + 1);
     uint8_t hi = *p;
     return (uint16_t) lo | ((uint16_t) hi << 8);
 }
 
-inline uint16_t modbusWriteBigEndian(uint8_t *p, uint16_t val)
+static inline uint16_t modbusWriteBigEndian(uint8_t *p, uint16_t val)
 {
     *p = val >> 8;
     *(p + 1) = val & 0xff;
@@ -162,7 +169,7 @@ inline uint16_t modbusWriteBigEndian(uint8_t *p, uint16_t val)
  * @param count
  * @return
  */
-inline uint8_t modbusCheckRangeU16(uint16_t index, uint16_t count)
+static inline uint8_t modbusCheckRangeU16(uint16_t index, uint16_t count)
 {
 #ifndef UINT16_MAX
 #define UINT16_MAX 0xFFFF

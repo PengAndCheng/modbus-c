@@ -82,6 +82,12 @@ static inline ModbusError modbusParseRequest01020304(
     };
 
     //检查所有寄存器是否可以被读取
+    if (status->resultCallback) {
+        if (status->resultCallback(status,REQUEST_PASS,0) == CALLBACK_RESULT_SKIP_REGISTER_CALLBACK) {
+            //此功能跳过寄存器回调就相当于跳过返回 可以用于RTU的PDU转向TCP的RTU
+            return MODBUS_ERROR_OK;
+        }
+    }
 #if MODBUS_SLAVE_CHECK_CALLBACK
     for (uint16_t i = 0; i < count; i++)
     {
@@ -94,11 +100,11 @@ static inline ModbusError modbusParseRequest01020304(
         }
         if (fail) {
             SLAVE_DEBUG_PRINTF;
-            return fail;
+            return fail + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
         }
         if (cres.exceptionCode) {
             SLAVE_DEBUG_PRINTF;
-            return cres.exceptionCode;
+            return cres.exceptionCode + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
         }
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
@@ -171,6 +177,12 @@ static inline ModbusError modbusParseRequest0506(
     };
 
     //检查回调
+    if (status->resultCallback) {
+        if (status->resultCallback(status,REQUEST_PASS,0) == CALLBACK_RESULT_SKIP_REGISTER_CALLBACK) {
+            //此功能跳过寄存器回调就相当于跳过返回 可以用于RTU的PDU转向TCP的RTU
+            return MODBUS_ERROR_OK;
+        }
+    }
 #if MODBUS_SLAVE_CHECK_CALLBACK
     ModbusError fail;
     if (status->slaveRegisterCallback) {
@@ -180,11 +192,11 @@ static inline ModbusError modbusParseRequest0506(
     }
     if (fail) {
         SLAVE_DEBUG_PRINTF;
-        return fail;
+        return fail + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
     }
     if (cres.exceptionCode) {
         SLAVE_DEBUG_PRINTF;
-        return cres.exceptionCode;
+        return cres.exceptionCode + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
 
@@ -258,6 +270,12 @@ static inline ModbusError modbusParseRequest1516(
     };
 
     //检查写入访问
+    if (status->resultCallback) {
+        if (status->resultCallback(status,REQUEST_PASS,0) == CALLBACK_RESULT_SKIP_REGISTER_CALLBACK) {
+            //此功能跳过寄存器回调就相当于跳过返回 可以用于RTU的PDU转向TCP的RTU
+            return MODBUS_ERROR_OK;
+        }
+    }
 #if MODBUS_SLAVE_CHECK_CALLBACK
     for (uint16_t i = 0; i < count; i++)
     {
@@ -271,11 +289,11 @@ static inline ModbusError modbusParseRequest1516(
         }
         if (fail) {
             SLAVE_DEBUG_PRINTF;
-            return fail;
+            return fail + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
         }
         if (cres.exceptionCode) {
             SLAVE_DEBUG_PRINTF;
-            return cres.exceptionCode;
+            return cres.exceptionCode + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
         }
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
@@ -285,7 +303,7 @@ static inline ModbusError modbusParseRequest1516(
     for (uint16_t i = 0; i < count; i++)
     {
         cargs.index = index + i;
-        cargs.value = datatype == MODBUS_COIL ? modbusReadBits(&requestPDU[6], i) : modbusReadLittleEndian(&requestPDU[6 + (i << 1)]);
+        cargs.value = datatype == MODBUS_COIL ? modbusReadBits(&requestPDU[6], i) : modbusReadBigEndian(&requestPDU[6 + (i << 1)]);
         if (status->slaveRegisterCallback) {
             status->slaveRegisterCallback(status, &cargs, &cres);
         }else {

@@ -69,7 +69,7 @@ ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, con
     err = modbusParseRequest(status, status->requestPDU, status->requestPDU_length);
     if (err) {
         SLAVE_DEBUG_PRINTF;
-        return err;
+        return err + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
     }
 
     //该长度为ADU长度 写地址和CRC
@@ -155,7 +155,7 @@ ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, u
     err = modbusParseRequest(status, status->requestPDU, status->requestPDU_length);
     if (err) {
         SLAVE_DEBUG_PRINTF;
-        return err;
+        return err + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
     }
 
     //该长度为ADU长度 写MBAP头

@@ -6,6 +6,7 @@
 
 uint16_t modbusCRC(const uint8_t *data, uint16_t length)
 {
+    //此函数可以针对CPU改为硬件CRC
     uint16_t crc = 0xFFFF;
 
     for (uint16_t i = 0; i < length; i++)
