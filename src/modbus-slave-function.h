@@ -100,11 +100,11 @@ static inline ModbusError modbusParseRequest01020304(
         }
         if (fail) {
             SLAVE_DEBUG_PRINTF;
-            return fail + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+            return fail;
         }
         if (cres.exceptionCode) {
             SLAVE_DEBUG_PRINTF;
-            return cres.exceptionCode + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+            return cres.exceptionCode;
         }
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
@@ -192,11 +192,11 @@ static inline ModbusError modbusParseRequest0506(
     }
     if (fail) {
         SLAVE_DEBUG_PRINTF;
-        return fail + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+        return fail;
     }
     if (cres.exceptionCode) {
         SLAVE_DEBUG_PRINTF;
-        return cres.exceptionCode + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+        return cres.exceptionCode;
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */
 
@@ -289,11 +289,11 @@ static inline ModbusError modbusParseRequest1516(
         }
         if (fail) {
             SLAVE_DEBUG_PRINTF;
-            return fail + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+            return fail;
         }
         if (cres.exceptionCode) {
             SLAVE_DEBUG_PRINTF;
-            return cres.exceptionCode + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+            return cres.exceptionCode;
         }
     }
 #endif /* #if MODBUS_SLAVE_CHECK_CALLBACK */

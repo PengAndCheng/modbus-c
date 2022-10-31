@@ -28,6 +28,30 @@ static inline ModbusError modbusParseRequest(ModbusSlave *status, const uint8_t 
 }
 
 
+static inline int modbusResponseExceptionCode(ModbusSlave *status, ModbusError err){
+    //只能在外层校验通过后才能返回异常码 否则不能乱返回
+
+    uint8_t ErrorCode = 0;
+    if (err == MODBUS_ERROR_FUNCTION) {
+        //非法功能
+        ErrorCode = 01;
+    }else if (err == MODBUS_ERROR_COUNT || err == MODBUS_ERROR_INDEX || err == MODBUS_ERROR_RANGE) {
+        //非法数据地址 包括寄存器一次读取个数太多 地址不存在 超过65535
+        ErrorCode = 02;
+    }else if (err == MODBUS_ERROR_VALUE) {
+        //非法数据值
+        ErrorCode = 03;
+    }
+
+    if (ErrorCode) {
+        status->responsePDU[0] = (*status->function) + 0x80;
+        status->responsePDU[1] = ErrorCode;
+        status->responsePDU_length = 2;
+    }
+
+    return status->responsePDU_length;
+}
+
 
 
 ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, const uint8_t *request, uint16_t requestLength, uint8_t checkCRC){
@@ -68,8 +92,12 @@ ModbusError modbusParseRequestRTU(ModbusSlave *status, uint8_t slaveAddress, con
     status->responsePDU_length = 0;
     err = modbusParseRequest(status, status->requestPDU, status->requestPDU_length);
     if (err) {
-        SLAVE_DEBUG_PRINTF;
-        return err + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+        if (modbusResponseExceptionCode(status,err)) {
+            //存在该返回的异常码 通过
+        }else {
+            SLAVE_DEBUG_PRINTF;
+            return err + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+        }
     }
 
     //该长度为ADU长度 写地址和CRC
@@ -154,8 +182,12 @@ ModbusError modbusParseRequestTCP(ModbusSlave *status, const uint8_t *request, u
     status->responsePDU_length = 0;
     err = modbusParseRequest(status, status->requestPDU, status->requestPDU_length);
     if (err) {
-        SLAVE_DEBUG_PRINTF;
-        return err + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+        if (modbusResponseExceptionCode(status,err)) {
+            //存在该返回的异常码 通过
+        }else {
+            SLAVE_DEBUG_PRINTF;
+            return err + MODBUS_FUNCTION_EXCEPTIONAL_BASE;
+        }
     }
 
     //该长度为ADU长度 写MBAP头

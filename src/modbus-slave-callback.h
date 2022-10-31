@@ -10,6 +10,18 @@ uint8_t R02[32]={0};
 uint16_t R03[32]={0};
 uint16_t R04[32]={0};
 
+static int isInit = 0;
+
+void init(void){
+    for (int i = 0; i < 32; ++i) {
+        R01[i]=i;
+        R02[i]=i;
+        R03[i]=i;
+        R04[i]=i;
+    }
+}
+
+
 static inline ModbusError defaultSlaveRegisterCallback(
     const ModbusSlave *slave,
     const ModbusRegisterCallbackArgs *args,
@@ -24,6 +36,10 @@ static inline ModbusError defaultSlaveRegisterCallback(
         args->function
     );
 
+    if (!isInit) {
+        init();
+    }
+
     switch (args->query)
     {
         case MODBUS_REGQ_R_CHECK:
@@ -33,8 +49,17 @@ static inline ModbusError defaultSlaveRegisterCallback(
 
 
         case MODBUS_REGQ_R:
+            if (args->index >= 32) {
+                result->value = 7;
+                return MODBUS_OK;
+            }
+
+            break;
         case MODBUS_REGQ_W:
-            result->value = 0;
+            if (args->index >= 32) {
+                return MODBUS_OK;
+            }
+
             break;
 
         default: break;
@@ -54,10 +79,10 @@ static inline ModbusError defaultSlaveRegisterCallback(
     }else if (args->function == 02) {
         switch (args->query) {
             case MODBUS_REGQ_R:
-                result->value = R01[args->index];
+                result->value = R02[args->index];
                 break;
             case MODBUS_REGQ_W:
-                R01[args->index] = args->value;
+                R02[args->index] = args->value;
                 break;
 
             default: break;
@@ -76,10 +101,10 @@ static inline ModbusError defaultSlaveRegisterCallback(
     }else if (args->function == 04) {
         switch (args->query) {
             case MODBUS_REGQ_R:
-                result->value = R03[args->index];
+                result->value = R04[args->index];
                 break;
             case MODBUS_REGQ_W:
-                R03[args->index] = args->value;
+                R04[args->index] = args->value;
                 break;
 
             default: break;

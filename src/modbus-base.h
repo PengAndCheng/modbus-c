@@ -86,7 +86,6 @@ typedef enum ModbusError
 
 
     MODBUS_FUNCTION_EXCEPTIONAL_BASE = 100,
-    MODBUS_CALLBACK_EXCEPTIONAL_BASE = 200,//回调返回+100 功能返回又+100 整体就是200 但是这个异常不使用 内部使用MODBUS_FUNCTION_EXCEPTIONAL_BASE
 } ModbusError;
 
 

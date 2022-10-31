@@ -86,7 +86,7 @@ struct ModbusSlave
 
     const uint8_t* rtu_crc;
 
-    const uint8_t* function;
+    const uint8_t* function;//异常码需要提取到此参数
 
 
     uint8_t* response;
