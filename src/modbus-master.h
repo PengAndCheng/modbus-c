@@ -89,7 +89,7 @@ struct ModbusMaster
 ModbusError modbusRequestRTU(ModbusMaster *status, uint8_t slave_address, uint8_t function_code, uint16_t register_address, uint16_t count, uint16_t value0506, void* data1516);
 ModbusError modbusRequestTCP(ModbusMaster *status, uint16_t transactionID, uint8_t unitID, uint8_t function_code, uint16_t register_address, uint16_t count, uint16_t value0506, void* data1516);
 
-int modbusExpectedResponseInputCount(ModbusLineType type, uint8_t function_code, uint16_t register_count);
-uint8_t modbusExpectedResponseInputExceptionCode(ModbusLineType type,uint8_t* response, int response_lenght);
+int modbusExpectedResponseFrameLength(ModbusLineType type, uint8_t function_code, uint16_t register_count);
+uint8_t modbusExpectedResponseExceptionCode(ModbusLineType type,uint8_t* response, int response_lenght);
 
 #endif /* MODBUS_MASTER_H */

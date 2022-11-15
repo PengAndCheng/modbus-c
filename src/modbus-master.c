@@ -84,7 +84,9 @@ ModbusError modbusRequestTCP(ModbusMaster *status, uint16_t transactionID, uint8
 
 
 
-int modbusExpectedResponseInputCount(ModbusLineType type, uint8_t function_code, uint16_t register_count){
+
+//modbus预测接收数据帧长度
+int modbusExpectedResponseFrameLength(ModbusLineType type, uint8_t function_code, uint16_t register_count){
     int rtu_input_count = 0;
     if (function_code == 1 || function_code == 2) {
         rtu_input_count = (register_count+7)/8+5;   //从机地址1+功能码1+数据长度1+数据(N+7)/8+校验2
@@ -113,7 +115,8 @@ int modbusExpectedResponseInputCount(ModbusLineType type, uint8_t function_code,
     return 0;
 }
 
-uint8_t modbusExpectedResponseInputExceptionCode(ModbusLineType type,uint8_t* response, int response_lenght){
+//modbus预测响应是异常码
+uint8_t modbusExpectedResponseExceptionCode(ModbusLineType type,uint8_t* response, int response_lenght){
     uint8_t function_code;
 
     if (type == RTU) {
