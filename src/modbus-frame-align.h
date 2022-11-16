@@ -23,6 +23,26 @@ typedef enum FrameError
     short_tcp_5,
     short_tcp_6,
     short_tcp_7,
+    short_tcp_8,
+
+
+
+
+    short_tcp_pdu_01020304,//顺序也符合程序结构 不要轻易改动
+    short_tcp_pdu_response_01020304,
+    short_tcp_pdu_request_01020304,
+    short_tcp_pdu_request_0506,
+    short_tcp_pdu_response_1516,
+    short_tcp_pdu_request_1516,
+    short_tcp_pdu_ExceptionCode,
+
+    tcp_response_01020304,
+    tcp_response_1516,
+    tcp_response_ExceptionCode,
+
+    tcp_request_01020304,
+    tcp_request_0506,
+    tcp_request_1516,
 
     exec_error = -404,
 }FrameError;
@@ -43,6 +63,7 @@ typedef struct Frame
     FrameType type;
     uint8_t* frame_head;
     int frame_lenght;
+    int isOK;
 }Frame;
 
 
